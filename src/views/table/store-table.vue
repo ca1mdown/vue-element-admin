@@ -306,39 +306,39 @@ export default {
       dialogPvVisible: false,
       pvData: [],
       rules: {
-        brandName: [
-          { required: true, message: 'brandName is required', trigger: 'blur' }
-        ],
-        brandLogoUrl: [
-          { required: true, message: 'brandLogoUrl is required', trigger: 'blur' }
-        ],
-        storeName: [
-          { required: true, message: 'storeName is required', trigger: 'blur' }
-        ],
-        storeRemark: [
-          { required: true, message: 'storeRemark is required', trigger: 'blur' }
-        ],
-        storeImgUrl: [
-          { required: true, message: 'storeImgUrl is required', trigger: 'blur' }
-        ],
-        storeContactWxGzhFlag: [
-          { required: true, message: 'storeContactWxGzhFlag is required', trigger: 'blur' }
-        ],
-        storeContactWxGzhQrcode: [
-          { required: true, message: 'storeContactWxGzhQrcode is required', trigger: 'blur' }
-        ],
-        storeContact: [
-          { required: true, message: 'storeContact is required', trigger: 'blur' }
-        ],
-        storeAddress: [
-          { required: true, message: 'storeAddress is required', trigger: 'blur' }
-        ],
-        areaCode: [
-          { required: true, message: 'areaCode is required', trigger: 'blur' }
-        ],
-        partnerUserFlag: [
-          { required: true, message: 'partnerUserFlag is required', trigger: 'blur' }
-        ]
+        // brandName: [
+        //   { required: true, message: 'brandName is required', trigger: 'blur' }
+        // ],
+        // brandLogoUrl: [
+        //   { required: true, message: 'brandLogoUrl is required', trigger: 'blur' }
+        // ],
+        // storeName: [
+        //   { required: true, message: 'storeName is required', trigger: 'blur' }
+        // ],
+        // storeRemark: [
+        //   { required: true, message: 'storeRemark is required', trigger: 'blur' }
+        // ],
+        // storeImgUrl: [
+        //   { required: true, message: 'storeImgUrl is required', trigger: 'blur' }
+        // ],
+        // storeContactWxGzhFlag: [
+        //   { required: true, message: 'storeContactWxGzhFlag is required', trigger: 'blur' }
+        // ],
+        // storeContactWxGzhQrcode: [
+        //   { required: true, message: 'storeContactWxGzhQrcode is required', trigger: 'blur' }
+        // ],
+        // storeContact: [
+        //   { required: true, message: 'storeContact is required', trigger: 'blur' }
+        // ],
+        // storeAddress: [
+        //   { required: true, message: 'storeAddress is required', trigger: 'blur' }
+        // ],
+        // areaCode: [
+        //   { required: true, message: 'areaCode is required', trigger: 'blur' }
+        // ],
+        // partnerUserFlag: [
+        //   { required: true, message: 'partnerUserFlag is required', trigger: 'blur' }
+        // ]
       },
       downloadLoading: false,
       pickerOptions: {
@@ -387,9 +387,7 @@ export default {
         this.total = response.data.total
 
         // Just to simulate the time of the request
-        setTimeout(() => {
-          this.listLoading = false
-        }, 1.5 * 1000)
+        this.listLoading = false
       })
       partnerUserList({ approveStatus: 30 }).then(response => {
         this.partnerUserFlagOptions = response.data.list
@@ -461,6 +459,7 @@ export default {
               type: 'success',
               duration: 2000
             })
+            this.getList()
           })
         }
       })
@@ -473,43 +472,59 @@ export default {
         this.$refs['dataForm'].clearValidate()
       })
     },
-    updateData() {
-      this.$refs['dataForm'].validate((valid) => {
-        if (valid) {
-          const tempData = Object.assign({}, this.temp)
+    async updateData() {
+      this.$confirm('确认编辑该商店?', 'Warning', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        .then(() => {
+          this.$refs['dataForm'].validate((valid) => {
+            if (valid) {
+              const tempData = Object.assign({}, this.temp)
+              tempData.createTime = undefined
+              tempData.modifyTime = undefined
+              tempData.createBy = undefined
+              tempData.modifyBy = undefined
+              updateStore(tempData).then(() => {
+                const index = this.list.findIndex((v) => v.id === this.temp.id)
+                this.list.splice(index, 1, this.temp)
+                this.dialogFormVisible = false
+                this.$notify({
+                  title: 'Success',
+                  message: 'Update Successfully',
+                  type: 'success',
+                  duration: 2000
+                })
+              })
+            }
+          })
+        })
+        .catch(err => { console.error(err) })
+    },
+    handleDelete(row, index) {
+      this.$confirm('确认删除该商店?', 'Warning', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        .then(() => {
+          const tempData = Object.assign({}, row) // copy obj
           tempData.createTime = undefined
           tempData.modifyTime = undefined
           tempData.createBy = undefined
           tempData.modifyBy = undefined
-          updateStore(tempData).then(() => {
-            const index = this.list.findIndex((v) => v.id === this.temp.id)
-            this.list.splice(index, 1, this.temp)
-            this.dialogFormVisible = false
+          deleteStore(tempData).then(() => {
             this.$notify({
               title: 'Success',
-              message: 'Update Successfully',
+              message: 'Delete Successfully',
               type: 'success',
               duration: 2000
             })
+            this.list.splice(index, 1)
           })
-        }
-      })
-    },
-    handleDelete(row, index) {
-      const tempData = Object.assign({}, row) // copy obj
-      tempData.createTime = undefined
-      tempData.modifyTime = undefined
-      tempData.createBy = undefined
-      tempData.modifyBy = undefined
-      deleteStore(tempData).then(() => {
-        this.$notify({
-          title: 'Success',
-          message: 'Delete Successfully',
-          type: 'success',
-          duration: 2000
         })
-        this.list.splice(index, 1)
-      })
+        .catch(err => { console.error(err) })
     },
     handleDownload() {
       this.downloadLoading = true
