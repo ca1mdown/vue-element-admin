@@ -28,7 +28,7 @@
         icon="el-icon-search"
         @click="handleFilter"
       >
-        Search
+        查询
       </el-button>
       <el-button
         class="filter-item"
@@ -37,9 +37,9 @@
         icon="el-icon-edit"
         @click="handleCreate"
       >
-        Add
+        新增
       </el-button>
-      <el-button
+      <!-- <el-button
         v-waves
         :loading="downloadLoading"
         class="filter-item"
@@ -48,7 +48,7 @@
         @click="handleDownload"
       >
         Export
-      </el-button>
+      </el-button> -->
     </div>
 
     <el-table
@@ -150,17 +150,28 @@
         :rules="rules"
         :model="temp"
         label-position="right"
-        label-width="100px"
+        label-width="110px"
         style="width: 400px; margin-left: 50px"
       >
         <el-form-item label="品牌名称" prop="brandName">
           <el-input v-model="temp.brandName" placeholder="请输入品牌名称" />
         </el-form-item>
+        <el-form-item label="品牌LOGO" prop="brandLogoUrl">
+          <imageUpload v-model="temp.brandLogoUrl" />
+        </el-form-item>
         <el-form-item label="店铺名称" prop="storeName">
           <el-input v-model="temp.storeName" placeholder="请输入店铺名称" />
         </el-form-item>
+        <el-form-item label="业务员" prop="partnerUserFlag">
+          <el-select v-model="temp.partnerUserFlag" class="filter-item" placeholder="请选择">
+            <el-option v-for="item in partnerUserFlagOptions" :key="item.id" :label="item.userContact" :value="item.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="备注说明" prop="storeRemark">
           <el-input v-model="temp.storeRemark" :autosize="{ minRows: 2, maxRows: 4}" type="textarea" placeholder="请输入备注说明" />
+        </el-form-item>
+        <el-form-item label="店铺图片" prop="storeImgUrl">
+          <imageUpload v-model="temp.storeImgUrl" />
         </el-form-item>
         <el-form-item label="电话" prop="storeContact">
           <el-input v-model="temp.storeContact" placeholder="请输入电话" />
@@ -171,26 +182,20 @@
         <el-form-item label="详细地址" prop="storeAddress">
           <el-input v-model="temp.storeAddress" placeholder="请输入详细地址" />
         </el-form-item>
-        <el-form-item label="品牌LOGO" prop="brandLogoUrl">
-          <el-input v-model="temp.brandLogoUrl" placeholder="todo image upload" />
-        </el-form-item>
-        <el-form-item label="店铺图片" prop="storeImgUrl">
-          <el-input v-model="temp.storeImgUrl" placeholder="todo image upload" />
+        <el-form-item label="公众号标识" prop="storeContactWxGzhFlag">
+          <el-input v-model="temp.storeContactWxGzhFlag" placeholder="请输入公众号标识" />
         </el-form-item>
         <el-form-item label="公众号二维码" prop="storeContactWxGzhQrcode">
-          <el-input v-model="temp.storeContactWxGzhQrcode" placeholder="todo image upload" />
-        </el-form-item>
-        <el-form-item label="业务员" prop="partnerUserFlag">
-          <el-input v-model="temp.partnerUserFlag" placeholder="todo select" />
+          <imageUpload v-model="temp.brandLogoUrl" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogFormVisible = false"> Cancel </el-button>
+        <el-button @click="dialogFormVisible = false"> 取消 </el-button>
         <el-button
           type="primary"
           @click="dialogStatus === 'create' ? createData() : updateData()"
         >
-          Confirm
+          确定
         </el-button>
       </div>
     </el-dialog>
@@ -217,10 +222,12 @@
 </template>
 
 <script>
-import { fetchList, fetchPv, createArticle, updateArticle } from '@/api/store'
+import { fetchList, createStore, updateStore, deleteStore } from '@/api/store'
+import { partnerUserList } from '@/api/partner-user'
 import waves from '@/directive/waves' // waves directive
 import { parseTime } from '@/utils'
 import Pagination from '@/components/Pagination' // secondary package based on el-pagination
+import imageUpload from '@/components/ImageUpload'
 
 const calendarTypeOptions = [
   { key: 'CN', display_name: 'China' },
@@ -237,7 +244,7 @@ const calendarTypeKeyValue = calendarTypeOptions.reduce((acc, cur) => {
 
 export default {
   name: 'StoreTable',
-  components: { Pagination },
+  components: { Pagination, imageUpload },
   directives: { waves },
   filters: {
     statusFilter(status) {
@@ -273,6 +280,7 @@ export default {
         { label: 'ID Descending', key: '-id' }
       ],
       statusOptions: ['published', 'draft', 'deleted'],
+      partnerUserFlagOptions: [],
       showReviewer: false,
       temp: {
         id: undefined,
@@ -281,6 +289,7 @@ export default {
         storeName: '',
         storeRemark: '',
         storeImgUrl: '',
+        storeContactWxGzhFlag: '',
         storeContactWxGzhQrcode: '',
         storeTypeCode: '101000',
         storeContact: '',
@@ -297,19 +306,38 @@ export default {
       dialogPvVisible: false,
       pvData: [],
       rules: {
-        type: [
-          { required: true, message: 'type is required', trigger: 'change' }
+        brandName: [
+          { required: true, message: 'brandName is required', trigger: 'blur' }
         ],
-        timestamp: [
-          {
-            type: 'date',
-            required: true,
-            message: 'timestamp is required',
-            trigger: 'change'
-          }
+        brandLogoUrl: [
+          { required: true, message: 'brandLogoUrl is required', trigger: 'blur' }
         ],
-        title: [
-          { required: true, message: 'title is required', trigger: 'blur' }
+        storeName: [
+          { required: true, message: 'storeName is required', trigger: 'blur' }
+        ],
+        storeRemark: [
+          { required: true, message: 'storeRemark is required', trigger: 'blur' }
+        ],
+        storeImgUrl: [
+          { required: true, message: 'storeImgUrl is required', trigger: 'blur' }
+        ],
+        storeContactWxGzhFlag: [
+          { required: true, message: 'storeContactWxGzhFlag is required', trigger: 'blur' }
+        ],
+        storeContactWxGzhQrcode: [
+          { required: true, message: 'storeContactWxGzhQrcode is required', trigger: 'blur' }
+        ],
+        storeContact: [
+          { required: true, message: 'storeContact is required', trigger: 'blur' }
+        ],
+        storeAddress: [
+          { required: true, message: 'storeAddress is required', trigger: 'blur' }
+        ],
+        areaCode: [
+          { required: true, message: 'areaCode is required', trigger: 'blur' }
+        ],
+        partnerUserFlag: [
+          { required: true, message: 'partnerUserFlag is required', trigger: 'blur' }
         ]
       },
       downloadLoading: false,
@@ -362,6 +390,9 @@ export default {
         setTimeout(() => {
           this.listLoading = false
         }, 1.5 * 1000)
+      })
+      partnerUserList({ approveStatus: 30 }).then(response => {
+        this.partnerUserFlagOptions = response.data.list
       })
     },
     handleFilter() {
@@ -421,8 +452,7 @@ export default {
         if (valid) {
           // this.temp.id = parseInt(Math.random() * 100) + 1024 // mock a id
           this.temp.storeFlag = parseInt(Math.random() * 100) + 1024 // mock a storeFlag
-          this.temp.author = 'vue-element-admin'
-          createArticle(this.temp).then(() => {
+          createStore(this.temp).then(() => {
             this.list.unshift(this.temp)
             this.dialogFormVisible = false
             this.$notify({
@@ -437,7 +467,6 @@ export default {
     },
     handleUpdate(row) {
       this.temp = Object.assign({}, row) // copy obj
-      this.temp.timestamp = new Date(this.temp.timestamp)
       this.dialogStatus = 'update'
       this.dialogFormVisible = true
       this.$nextTick(() => {
@@ -448,8 +477,11 @@ export default {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           const tempData = Object.assign({}, this.temp)
-          tempData.timestamp = +new Date(tempData.timestamp) // change Thu Nov 30 2017 16:41:05 GMT+0800 (CST) to 1512031311464
-          updateArticle(tempData).then(() => {
+          tempData.createTime = undefined
+          tempData.modifyTime = undefined
+          tempData.createBy = undefined
+          tempData.modifyBy = undefined
+          updateStore(tempData).then(() => {
             const index = this.list.findIndex((v) => v.id === this.temp.id)
             this.list.splice(index, 1, this.temp)
             this.dialogFormVisible = false
@@ -464,18 +496,19 @@ export default {
       })
     },
     handleDelete(row, index) {
-      this.$notify({
-        title: 'Success',
-        message: 'Delete Successfully',
-        type: 'success',
-        duration: 2000
-      })
-      this.list.splice(index, 1)
-    },
-    handleFetchPv(pv) {
-      fetchPv(pv).then((response) => {
-        this.pvData = response.data.pvData
-        this.dialogPvVisible = true
+      const tempData = Object.assign({}, row) // copy obj
+      tempData.createTime = undefined
+      tempData.modifyTime = undefined
+      tempData.createBy = undefined
+      tempData.modifyBy = undefined
+      deleteStore(tempData).then(() => {
+        this.$notify({
+          title: 'Success',
+          message: 'Delete Successfully',
+          type: 'success',
+          duration: 2000
+        })
+        this.list.splice(index, 1)
       })
     },
     handleDownload() {
