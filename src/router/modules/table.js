@@ -38,9 +38,15 @@ const tableRouter = {
     },
     {
       path: 'store-table',
-      component: () => import('@/views/table/store-table'),
+      component: () => import('@/views/table/business-table/store-info-table'),
       name: 'StoreTable',
       meta: { title: 'Store Table' }
+    },
+    {
+      path: 'goods-table/:storeFlag',
+      component: () => import('@/views/table/business-table/store-goods-table'),
+      name: 'GoodsTable',
+      meta: { title: 'Goods Table' }
     }
   ]
 }

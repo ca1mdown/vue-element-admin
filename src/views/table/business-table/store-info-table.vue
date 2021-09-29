@@ -112,7 +112,7 @@
           <el-button
             v-if="row.status != 'draft'"
             size="mini"
-            @click="handleModifyStatus(row, 'draft')"
+            @click="$router.push(`/table/goods-table/${row.storeFlag}`)"
           >
             产品
           </el-button>
@@ -222,7 +222,7 @@
 </template>
 
 <script>
-import { fetchList, createStore, updateStore, deleteStore } from '@/api/store'
+import { fetchStoreList, createStore, updateStore, deleteStore } from '@/api/store-info'
 import { partnerUserList } from '@/api/partner-user'
 import waves from '@/directive/waves' // waves directive
 import { parseTime } from '@/utils'
@@ -382,7 +382,7 @@ export default {
   methods: {
     getList() {
       this.listLoading = true
-      fetchList(this.listQuery).then((response) => {
+      fetchStoreList(this.listQuery).then((response) => {
         this.list = response.data.list
         this.total = response.data.total
 
@@ -472,38 +472,30 @@ export default {
         this.$refs['dataForm'].clearValidate()
       })
     },
-    async updateData() {
-      this.$confirm('确认编辑该商店?', 'Warning', {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        type: 'warning'
-      })
-        .then(() => {
-          this.$refs['dataForm'].validate((valid) => {
-            if (valid) {
-              const tempData = Object.assign({}, this.temp)
-              tempData.createTime = undefined
-              tempData.modifyTime = undefined
-              tempData.createBy = undefined
-              tempData.modifyBy = undefined
-              updateStore(tempData).then(() => {
-                const index = this.list.findIndex((v) => v.id === this.temp.id)
-                this.list.splice(index, 1, this.temp)
-                this.dialogFormVisible = false
-                this.$notify({
-                  title: 'Success',
-                  message: 'Update Successfully',
-                  type: 'success',
-                  duration: 2000
-                })
-              })
-            }
+    updateData() {
+      this.$refs['dataForm'].validate((valid) => {
+        if (valid) {
+          const tempData = Object.assign({}, this.temp)
+          tempData.createTime = undefined
+          tempData.modifyTime = undefined
+          tempData.createBy = undefined
+          tempData.modifyBy = undefined
+          updateStore(tempData).then(() => {
+            const index = this.list.findIndex((v) => v.id === this.temp.id)
+            this.list.splice(index, 1, this.temp)
+            this.dialogFormVisible = false
+            this.$notify({
+              title: 'Success',
+              message: 'Update Successfully',
+              type: 'success',
+              duration: 2000
+            })
           })
-        })
-        .catch(err => { console.error(err) })
+        }
+      })
     },
     handleDelete(row, index) {
-      this.$confirm('确认删除该商店?', 'Warning', {
+      this.$confirm('确认删除该条数据?', 'Warning', {
         confirmButtonText: '确认',
         cancelButtonText: '取消',
         type: 'warning'
