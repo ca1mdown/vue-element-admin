@@ -37,16 +37,22 @@ const tableRouter = {
       meta: { title: 'Complex Table' }
     },
     {
-      path: 'store-table',
+      path: 'store-info-table',
       component: () => import('@/views/table/business-table/store-info-table'),
       name: 'StoreTable',
       meta: { title: 'Store Table' }
     },
     {
-      path: 'goods-table/:storeFlag',
+      path: 'store-goods-table/:storeFlag',
       component: () => import('@/views/table/business-table/store-goods-table'),
       name: 'GoodsTable',
       meta: { title: 'Goods Table' }
+    },
+    {
+      path: 'store-activity-table/:storeFlag',
+      component: () => import('@/views/table/business-table/store-activity-table'),
+      name: 'ActivityTable',
+      meta: { title: 'Activity Table' }
     }
   ]
 }

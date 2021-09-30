@@ -2,24 +2,16 @@
   <div class="app-container">
     <div class="filter-container">
       <el-input
-        v-model="listQuery.goodsName"
-        placeholder="产品名称"
+        v-model="listQuery.activityName"
+        placeholder="活动名称"
         style="width: 200px"
         class="filter-item"
         @keyup.enter.native="handleFilter"
       />
-      <el-date-picker
-        v-model="value2"
-        type="daterange"
-        align="right"
-        unlink-panels
-        range-separator="至"
-        start-placeholder="开始日期"
-        end-placeholder="结束日期"
-        class="filter-item"
-        style="margin-left: 10px"
-        :picker-options="pickerOptions"
-      />
+      <el-select v-model="listQuery.sort" style="width: 140px;margin-left: 10px" class="filter-item" @change="handleFilter">
+        <el-option v-for="item in sortOptions" :key="item.key" :label="item.label" :value="item.key" />
+      </el-select>
+      <!-- `f_order_pay_status` int(2) NOT NULL DEFAULT '0' COMMENT '支付状态，10未支付，20已支付，30已全部退款，31已部分退款', -->
       <el-button
         v-waves
         class="filter-item"
@@ -73,34 +65,40 @@
           <span>{{ row.id }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="产品主图" width="220px" align="center">
+      <el-table-column label="活动名称" width="220px" align="center">
         <template slot-scope="{ row }">
-          <img :src="(row.goodsImgUrl + '').split(';').filter(item => { return item && item.trim() })[0]" alt="" style="width: 100%;">
+          <span>{{ row.activityName }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="产品名称" width="220px" align="center">
+      <el-table-column label="活动详情" width="250px" align="center">
         <template slot-scope="{ row }">
-          <span>{{ row.goodsName }}</span>
+          <span>
+            {{
+              `活动商品
+              ${formatPrice(JSON.parse(row.activityDetail).activityPrice)}
+              元任选
+              ${JSON.parse(row.activityDetail).selectNum}
+              件体验
+              ${JSON.parse(row.activityDetail).itemTimes}
+              次`
+            }}
+          </span>
         </template>
       </el-table-column>
-      <el-table-column label="价格" width="110px" align="center">
+      <el-table-column label="状态" width="110px" align="center">
         <template slot-scope="{ row }">
-          <span>{{ formatPrice(row.goodsPrice) }}元</span>
+          <span>{{ row.activityFlag }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="库存" width="110px" align="center">
+      <el-table-column label="活动时间" width="150px" align="center">
         <template slot-scope="{ row }">
-          <span>{{ row.goodsStock === -1 ? '无限' : row.goodsStock }}</span>
+          <span>{{ row.activityStartTime | parseTime("{y}-{m}-{d} {h}:{i}") }} 至</span>
+          <span>{{ row.activityEndTime | parseTime("{y}-{m}-{d} {h}:{i}") }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建人" width="110px" align="center">
+      <el-table-column label="业务员" width="110px" align="center">
         <template slot-scope="{ row }">
-          <span>{{ row.createBy }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="说明" width="220px" align="center">
-        <template slot-scope="{ row }">
-          <span>{{ row.goodsRemark }}</span>
+          <span>{{ row.partnerUserFlag }}</span>
         </template>
       </el-table-column>
       <el-table-column label="创建日期" width="150px" align="center">
@@ -147,16 +145,16 @@
         label-width="110px"
         style="width: 400px; margin-left: 50px"
       >
-        <el-form-item label="店铺名称" prop="storeName">
+        <el-form-item label="店铺名称" prop="activityName">
           <el-select v-model="temp.storeFlag" class="filter-item" placeholder="请选择" disabled>
-            <el-option v-for="item in storeNameOptions" :key="item.storeFlag" :label="item.storeName" :value="item.storeFlag" />
+            <el-option v-for="item in activityNameOptions" :key="item.storeFlag" :label="item.activityName" :value="item.storeFlag" />
           </el-select>
         </el-form-item>
-        <el-form-item label="产品名称" prop="goodsName">
-          <el-input v-model="temp.goodsName" placeholder="请输入产品名称" />
+        <el-form-item label="产品名称" prop="partnerRate">
+          <el-input v-model="temp.partnerRate" placeholder="请输入产品名称" />
         </el-form-item>
-        <el-form-item label="说明" prop="goodsRemark">
-          <el-input v-model="temp.goodsRemark" :autosize="{ minRows: 2, maxRows: 4}" type="textarea" placeholder="请输入说明" />
+        <el-form-item label="说明" prop="activityDetail">
+          <el-input v-model="temp.activityDetail" :autosize="{ minRows: 2, maxRows: 4}" type="textarea" placeholder="请输入说明" />
         </el-form-item>
         <el-form-item label="价格" prop="goodsPrice">
           <el-input v-model="temp.goodsPrice" placeholder="请输入价格" />
@@ -164,7 +162,7 @@
         <el-form-item label="库存" prop="goodsStock">
           <el-input v-show="!hiddenGoodsStock" v-model="temp.goodsStock" placeholder="请输入库存" />
           <el-checkbox v-model="hiddenGoodsStock">
-            无限
+            无限库存
           </el-checkbox>
         </el-form-item>
         <el-form-item label="主图（多图）" prop="goodsImgUrl">
@@ -207,7 +205,7 @@
 </template>
 
 <script>
-import { fetchList, createStoreGoods, updateStoreGoods, deleteStoreGoods } from '@/api/store-goods'
+import { fetchList, createStoreActivity, updateStoreActivity, deleteStoreActivity } from '@/api/store-activity'
 import { fetchStoreList } from '@/api/store-info'
 import waves from '@/directive/waves' // waves directive
 import { parseTime } from '@/utils'
@@ -263,15 +261,15 @@ export default {
         { label: 'ID Descending', key: '-id' }
       ],
       statusOptions: ['published', 'draft', 'deleted'],
-      storeNameOptions: [],
+      activityNameOptions: [],
       showReviewer: false,
       temp: {
         id: undefined,
-        storeName: '',
+        activityName: '',
         storeFlag: this.$route.params.storeFlag,
-        goodsFlag: '',
-        goodsName: '',
-        goodsRemark: '',
+        partnerUserFlag: '',
+        partnerRate: '',
+        activityDetail: '',
         goodsPrice: '',
         goodsMarketPrice: '',
         goodsStock: '',
@@ -279,7 +277,7 @@ export default {
         goodsAddedStock: '',
         goodsImgUrl: '',
         goodsDetail: '',
-        goodsType: '100'
+        activityType: '100'
       },
       hiddenGoodsStock: false,
       dialogFormVisible: false,
@@ -291,17 +289,17 @@ export default {
       dialogPvVisible: false,
       pvData: [],
       rules: {
-        // storeName: [
-        //   { required: true, message: 'storeName is required', trigger: 'blur' }
+        // activityName: [
+        //   { required: true, message: 'activityName is required', trigger: 'blur' }
         // ],
-        goodsName: [
-          { required: true, message: 'goodsName is required', trigger: 'blur' }
+        partnerRate: [
+          { required: true, message: 'partnerRate is required', trigger: 'blur' }
         ],
         // goodsImgUrl: [
         //   { required: true, message: 'goodsImgUrl is required', trigger: 'blur' }
         // ],
-        // goodsRemark: [
-        //   { required: true, message: 'goodsRemark is required', trigger: 'blur' }
+        // activityDetail: [
+        //   { required: true, message: 'activityDetail is required', trigger: 'blur' }
         // ],
         goodsPrice: [
           { required: true, message: 'goodsPrice is required', trigger: 'blur' },
@@ -368,13 +366,13 @@ export default {
           storeFlag: this.$route.params.storeFlag
         }).then(response => {
           if (!response.data.list.length) {
-            // this.$router.push('/table/store-info-table')
+            // this.$router.push('/table/store-table')
             this.$message({
               message: '该店铺不存在',
               type: 'info'
             })
           }
-          this.storeNameOptions = response.data.list
+          this.activityNameOptions = response.data.list
         })
       })
     },
@@ -406,11 +404,11 @@ export default {
     resetTemp() {
       this.temp = {
         id: undefined,
-        storeName: '',
+        activityName: '',
         storeFlag: parseInt(this.$route.params.storeFlag),
-        goodsFlag: '',
-        goodsName: '',
-        goodsRemark: '',
+        partnerUserFlag: '',
+        partnerRate: '',
+        activityDetail: '',
         goodsPrice: '',
         goodsMarketPrice: '',
         goodsStock: '',
@@ -418,7 +416,7 @@ export default {
         goodsAddedStock: '',
         goodsImgUrl: '',
         goodsDetail: '',
-        goodsType: '100'
+        activityType: '200'
       }
       this.hiddenGoodsStock = false
     },
@@ -435,12 +433,12 @@ export default {
         if (valid) {
           // this.temp.id = parseInt(Math.random() * 100) + 1024 // mock a id
           // this.temp.storeFlag = this.$route.params.storeFlag || parseInt(Math.random() * 100) + 1024
-          this.temp.goodsFlag = parseInt(Math.random() * 100) + 1024 // mock a storeFlag
+          this.temp.partnerUserFlag = parseInt(Math.random() * 100) + 1024 // mock a storeFlag
           this.temp.goodsPrice = parseFloat(this.temp.goodsPrice) * 100
           if (this.hiddenGoodsStock === true) {
             this.temp.goodsStock = -1
           }
-          createStoreGoods(this.temp).then(() => {
+          createStoreActivity(this.temp).then(() => {
             this.list.unshift(this.temp)
             this.dialogFormVisible = false
             this.$notify({
@@ -479,7 +477,7 @@ export default {
           tempData.modifyTime = undefined
           tempData.createBy = undefined
           tempData.modifyBy = undefined
-          updateStoreGoods(tempData).then(() => {
+          updateStoreActivity(tempData).then(() => {
             const index = this.list.findIndex((v) => v.id === this.temp.id)
             this.list.splice(index, 1, this.temp)
             this.dialogFormVisible = false
@@ -505,7 +503,7 @@ export default {
           tempData.modifyTime = undefined
           tempData.createBy = undefined
           tempData.modifyBy = undefined
-          deleteStoreGoods(tempData).then(() => {
+          deleteStoreActivity(tempData).then(() => {
             this.$notify({
               title: 'Success',
               message: 'Delete Successfully',

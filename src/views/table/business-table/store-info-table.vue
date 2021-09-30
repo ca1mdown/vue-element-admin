@@ -102,27 +102,12 @@
       <el-table-column
         label="操作"
         align="center"
-        width="230"
+        width="300"
         class-name="small-padding fixed-width"
       >
         <template slot-scope="{ row, $index }">
           <el-button type="primary" size="mini" @click="handleUpdate(row)">
             编辑
-          </el-button>
-          <el-button
-            v-if="row.status != 'draft'"
-            size="mini"
-            @click="$router.push(`/table/goods-table/${row.storeFlag}`)"
-          >
-            产品
-          </el-button>
-          <el-button
-            v-if="row.status != 'published'"
-            size="mini"
-            type="success"
-            @click="handleModifyStatus(row, 'published')"
-          >
-            活动
           </el-button>
           <el-button
             v-if="row.status != 'deleted'"
@@ -131,6 +116,21 @@
             @click="handleDelete(row, $index)"
           >
             删除
+          </el-button>
+          <el-button
+            v-if="row.status != 'draft'"
+            size="mini"
+            @click="$router.push(`/table/store-goods-table/${row.storeFlag}`)"
+          >
+            产品
+          </el-button>
+          <el-button
+            v-if="row.status != 'published'"
+            size="mini"
+            type="success"
+            @click="$router.push(`/table/store-activity-table/${row.storeFlag}`)"
+          >
+            活动
           </el-button>
         </template>
       </el-table-column>
@@ -495,7 +495,7 @@ export default {
       })
     },
     handleDelete(row, index) {
-      this.$confirm('确认删除该条数据?', 'Warning', {
+      this.$confirm('确认删除该条数据?', '提示', {
         confirmButtonText: '确认',
         cancelButtonText: '取消',
         type: 'warning'
